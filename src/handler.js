@@ -1,4 +1,4 @@
-const nanoid = require("nanoid");
+const {nanoid} = require("nanoid");
 const books = require("./books");
 const addBooks = (request, h) => {
     const {
@@ -12,7 +12,7 @@ const addBooks = (request, h) => {
         reading,
     } = request.payload;
 
-    const id = nanoid(16)
+    const id = nanoid();
     const finished = pageCount === readPage;
     const insertedAt = new Date().toISOString;
     const updatedAt = insertedAt;
@@ -35,7 +35,7 @@ const addBooks = (request, h) => {
 
     const hasValidName = books.filter(book => book.name && book.name.trim() !== "");
 
-    if(!hasValidName) {
+    if(hasValidName) {
         const response = h.response({
             "status": "fail",
             "message": "Gagal menambahkan buku. Mohon isi nama buku"
@@ -44,7 +44,7 @@ const addBooks = (request, h) => {
         return response;
     }   
 
-    if(books.every(book => book.pageCount > book.readPage)) {
+    if(books.every(book => book.pageCount < book.readPage)) {
         const response = h.response({
                 "status": "fail",
                 "message": "Gagal menambahkan buku. readPage tidak boleh lebih besar dari pageCount"
@@ -80,27 +80,30 @@ const getBooks = () => ({
     }
 })
 
-const getBooksId = (request , h) => {
-    const { id } = request.params;
-    const book = books.filter((book) => book.id === id)[0];
-    if(book !== undefined) {
+const getBooksId = (request, h) => {
+    const { bookId } = request.params;
+    const book = books.find((book) => book.id === bookId);
+
+    if (book) {
         return {
             status: "success",
             data: {
-                books
+                book,
             },
         };
+    } else {
+        const response = h.response({
+            status: "fail",
+            message: "Buku tidak ditemukan",
+        });
+        response.code(404);
+        return response;
     }
-    const response = h.response ({
-        status: "fail",
-        message: "Buku tidak ditemukan"
-    })
-    response.code(404);
-    return response;
-}
+};
+
 
 const updateBook = (request, h) => {
-    const {id} = request.params;
+    const {bookId} = request.params;
     const {
         name,
         year,
@@ -113,7 +116,7 @@ const updateBook = (request, h) => {
     } = request.payload;
 
     const updatedAt = new Date().toISOString();
-    const index = books.findIndex((book) => book.id === id);
+    const index = books.findIndex((book) => book.id === bookId);
     
     if(!name) {
         return h.response({
@@ -160,21 +163,20 @@ const updateBook = (request, h) => {
 }
 
 const deleteBook = (request, h) => {
-    const {id} = request.params;
-    const bookId = books.findIndex(book => book.id == id);
+    const {bookId} = request.params;
+    const book = books.findIndex(book => book.id == bookId);
 
-    if(bookId !== -1){
-        books.splice(bookId, 1);
+    if(book){
+        books.splice(book, 1);
         return h.response({
             status: "success",
             message :"Buku berhasil dihapus"
         }).code(200);
-    }else {
-        return h.response({
-            status: "fail",
-            message :"Buku gagal dihapus. Id tidak ditemukan"
-        }).code(404);
     }
+    return h.response({
+        status: "fail",
+        message :`Buku gagal dihapus. ${bookId} tidak ditemukan`
+    }).code(404);
 }
 
 module.exports = {addBooks, getBooks, getBooksId, updateBook, deleteBook};
