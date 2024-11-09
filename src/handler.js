@@ -15,7 +15,7 @@ const addBooks = (request, h) => {
 
     //membuat  id 
     const id = nanoid();
-    const finished = pageCount >= readPage;
+    const finished = pageCount === readPage;
     const insertedAt = new Date().toISOString();
     const updatedAt = insertedAt;
 
@@ -66,29 +66,77 @@ const addBooks = (request, h) => {
 };
 
 const getBooks = (request, h) => { 
-    const { name } = request.query;
+    const { name, reading, finished } = request.query;
 
-    if (name) {
-        const book = books.find(book => book.name.toLowerCase() === name.toLowerCase());   
-        console.log(book);
-        if (book) {
+    if(name || reading || finished){
+    let filteredBooks = books;
+    if(reading) {
+        if(reading === "1"){ 
+            filteredBooks = filteredBooks.filter(book => book.reading === true);
             const response = h.response({
                 status: "success",
-                data: {
-                    id: book.id,
-                    name: book.name
-                }
+                data: filteredBooks
             });
             response.code(200);
             return response;
-        } else {
+        }else if(finished === "0") {
+            filteredBooks = filteredBooks.filter(book => book.reading === false);
+            const response = h.response({
+                status: "success",
+                data: filteredBooks
+            });
+            response.code(200);
+            return response;
+        }else {
             const response = h.response({
                 status: "fail",
-                message: `Buku ${name} tidak ditemukan`
-            });
-            response.code(404);
-            return response;
+                message: `Tidak ada data yang cocok`
+                });
+                response.code(400);
+                return response;
         }
+    }else if(finished) {
+        if(finished === "1") {
+            filteredBooks = filteredBooks.filter(book => book.finished === true);
+            const response = h.response({
+                status: "success",
+                data: filteredBooks
+            });
+            response.code(200);
+            return response;
+        }else if(finished === "0"){
+            filteredBooks = filteredBooks.filter(book => book.finished === false);
+            const response = h.response({
+                status: "success",
+                data: filteredBooks
+            });
+            response.code(200);
+            return response;
+        }else{ 
+            const response = h.response({
+                status: "fail",
+                message: `Gagal menemukan buku ${name}.`
+                });
+                response.code(400);
+                return response;
+        }
+
+    }else if(name) {
+        filteredBooks = filteredBooks.filter(book => book.name.toLowerCase().includes(name.toLowerCase()));
+        const response = h.response({
+            status: "success",
+            data: filteredBooks
+        });
+        response.code(200);
+        return response;
+    }else {
+        const response = h.response({
+            status: "fail",
+            message: `Gagal menemukan buku ${name}.`
+            });
+            response.code(400);
+            return response;
+    }
     } else {
         const response = h.response({
             status: "success",
