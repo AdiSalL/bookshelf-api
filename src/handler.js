@@ -243,7 +243,7 @@ const deleteBook = (request, h) => {
     const {bookId} = request.params;
     const book = books.findIndex(book => book.id === bookId);
 
-    if(!book || book === -1){
+    if(book === -1){
         return h.response({
             status: "fail",
             message :`Buku gagal dihapus. ${bookId} tidak ditemukan`
